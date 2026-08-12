@@ -301,7 +301,7 @@
       if(activeTopic !== 'all' && !r.topics.includes(activeTopic)) return false;
       if(activeAge !== 'all' && !r.ageGroups.includes(activeAge)) return false;
       if(searchTerm){
-        const hay = (r.title + ' ' + r.description + ' ' + r.tags.join(' ')).toLowerCase();
+        const hay = (r.title + ' ' + r.description + ' ' + r.tags.join(' ') + ' ' + r.topics.join(' ') + ' ' + r.ageGroups.join(' ')).toLowerCase();
         if(!hay.includes(searchTerm.toLowerCase())) return false;
       }
       return true;
