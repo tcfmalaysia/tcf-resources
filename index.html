@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TCF Resource Library</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root{
+    --ink:#1E2A38;
+    --ink-70: rgba(30,42,56,0.72);
+    --ink-45: rgba(30,42,56,0.5);
+    --paper:#ECEEE2;
+    --card:#FBFBF5;
+    --gold:#C08A28;
+    --gold-dim: rgba(192,138,40,0.14);
+    --forest:#2F5D4E;
+    --forest-dim: rgba(47,93,78,0.12);
+    --clay:#A8462E;
+    --clay-dim: rgba(168,70,46,0.12);
+    --line: rgba(30,42,56,0.16);
+    --shadow: 0 1px 2px rgba(30,42,56,0.06), 0 6px 18px rgba(30,42,56,0.07);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Public Sans', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    min-height:100vh;
+  }
+  h1,h2,h3, .serif { font-family: 'Fraunces', Georgia, serif; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  a { color: var(--forest); }
+  button { font-family: inherit; cursor:pointer; }
+  input { font-family: inherit; font-size: 15px; }
+  :focus-visible{ outline: 2px solid var(--gold); outline-offset: 2px; }
+
+  .masthead{ background: var(--ink); color: var(--paper); padding: clamp(36px, 6vw, 64px) 24px clamp(28px, 5vw, 48px); }
+  .mast-inner{ max-width: 980px; margin: 0 auto; }
+  .eyebrow{ margin:0 0 10px; text-transform: uppercase; letter-spacing: 0.14em; font-size: 12px; color: var(--gold); }
+  .masthead h1{ margin: 0 0 14px; font-size: clamp(32px, 5vw, 52px); font-weight: 600; line-height: 1.05; }
+  .tagline{ margin: 0 0 20px; max-width: 560px; font-size: clamp(15px, 2vw, 17px); color: rgba(236,238,226,0.78); line-height: 1.5; }
+  .stats{ font-size: 13px; color: rgba(236,238,226,0.65); letter-spacing: 0.02em; }
+  .stats strong{ color: var(--paper); font-weight:600; }
+
+  .controls{ max-width: 980px; margin: -22px auto 0; padding: 0 24px; position: relative; z-index: 3; }
+  .search-wrap{ background: var(--card); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--shadow); padding: 4px; }
+  #searchInput{ width:100%; border: none; background: transparent; padding: 14px 16px; font-size: 16px; color: var(--ink); }
+  #searchInput::placeholder{ color: var(--ink-45); }
+  #searchInput:focus{ outline: none; }
+  .search-wrap:focus-within{ box-shadow: var(--shadow), 0 0 0 2px var(--gold); border-radius:6px; }
+
+  .filter-block{ margin-top: 18px; }
+  .filter-label{ font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-45); margin: 0 0 8px 2px; }
+  .chip-row{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ border: 1px solid var(--line); background: var(--card); color: var(--ink-70); padding: 7px 13px; border-radius: 5px; font-size: 13px; font-weight: 500; letter-spacing: 0.01em; transition: background .15s ease, color .15s ease, border-color .15s ease; }
+  .chip:hover{ border-color: var(--gold); }
+  .chip.active{ background: var(--ink); border-color: var(--ink); color: var(--gold); }
+
+  main.grid{ max-width: 980px; margin: 32px auto 0; padding: 0 24px 48px; display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 20px; }
+  .empty-state{ max-width: 640px; margin: 40px auto; text-align:center; color: var(--ink-45); font-size: 15px; padding: 0 24px; line-height:1.6; }
+  .empty-state a{ color: var(--forest); font-weight:600; }
+
+  .res-card{ position:relative; background: var(--card); border: 1px solid var(--line); border-radius: 4px; box-shadow: var(--shadow); padding: 22px 18px 18px; display:flex; flex-direction:column; gap: 10px; animation: rise .35s ease both; }
+  @media (prefers-reduced-motion: reduce){ .res-card{ animation:none; } }
+  @keyframes rise{ from{ opacity:0; transform: translateY(6px); } to{opacity:1; transform:none;} }
+
+  .punch{ position:absolute; top:-6px; width:12px; height:12px; border-radius:50%; background: var(--paper); border: 1px solid var(--line); }
+  .punch.left{ left: 22px; } .punch.right{ right: 22px; }
+
+  .card-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  .type-tab{ font-size: 10.5px; letter-spacing: 0.08em; padding: 4px 8px; border-radius: 3px; font-weight: 500; white-space: nowrap; }
+  .type-tab.ink{ background: rgba(30,42,56,0.08); color: var(--ink); }
+  .type-tab.gold{ background: var(--gold-dim); color: #8a6218; }
+  .type-tab.forest{ background: var(--forest-dim); color: var(--forest); }
+  .type-tab.clay{ background: var(--clay-dim); color: var(--clay); }
+
+  .card-title{ font-size: 19px; font-weight: 600; line-height:1.25; margin:0; }
+  .card-desc{ font-size: 14px; color: var(--ink-70); line-height:1.5; margin:0; flex-grow:1; }
+
+  .pill-row{ display:flex; flex-wrap:wrap; gap:6px; }
+  .pill{ font-size: 11px; border: 1px solid var(--line); color: var(--ink-70); padding: 3px 9px; border-radius: 20px; }
+  .pill-topic{ border-color: var(--forest); color: var(--forest); background: var(--forest-dim); font-weight: 600; }
+  .tag-row{ font-size: 12px; color: var(--ink-45); }
+
+  .card-foot{ display:flex; align-items:center; justify-content:space-between; margin-top: 4px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .open-link{ font-size: 13.5px; font-weight:600; color: var(--forest); text-decoration:none; }
+  .open-link:after{ content: " →"; }
+  .date-added{ font-size: 11px; color: var(--ink-45); }
+
+  .footer{ max-width: 980px; margin: 0 auto; padding: 8px 24px 56px; display:flex; flex-direction:column; align-items:center; gap:14px; text-align:center; }
+  .footer-cta{ font-size: 14px; color: var(--ink-70); }
+  .btn-primary-link{ display:inline-block; background: var(--ink); color: var(--gold); padding: 12px 22px; border-radius: 5px; text-decoration:none; font-weight:600; font-size:14px; }
+  .btn-primary-link:hover{ background:#2c3c50; }
+  .coord-link{ font-size: 12px; color: var(--ink-45); }
+  .coord-link a{ color: var(--ink-45); text-decoration: underline; }
+
+  .config-warning{ max-width: 980px; margin: 20px auto; padding: 14px 18px; background: var(--clay-dim); color: var(--clay); border-radius: 6px; font-size: 13.5px; line-height:1.5; }
+  .config-warning code{ background: rgba(0,0,0,0.06); padding: 1px 5px; border-radius: 3px; }
+
+  @media (max-width: 560px){
+    main.grid{ grid-template-columns: 1fr; }
+    .controls{ margin-top: -16px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="mast-inner">
+    <p class="eyebrow mono">Teachers Christian Fellowship</p>
+    <h1>Resource Library</h1>
+    <p class="tagline">Files, videos, articles and links for classroom and ministry use — organised by topic and age, easy to search.</p>
+    <p class="stats mono" id="stats">Loading catalogue…</p>
+  </div>
+</header>
+
+<div id="configWarning"></div>
+
+<section class="controls">
+  <div class="search-wrap">
+    <input id="searchInput" type="text" placeholder="Search by title, topic, or keyword…" />
+  </div>
+  <div class="filter-block">
+    <p class="filter-label mono">Education topic</p>
+    <div class="chip-row" id="topicFilters"></div>
+  </div>
+  <div class="filter-block">
+    <p class="filter-label mono">Age group</p>
+    <div class="chip-row" id="ageFilters"></div>
+  </div>
+</section>
+
+<main class="grid" id="grid"></main>
+<p class="empty-state" id="emptyState" hidden></p>
+
+<div class="footer">
+  <p class="footer-cta">Know a resource that belongs here?</p>
+  <a class="btn-primary-link" id="suggestLink" href="#" target="_blank" rel="noopener noreferrer">Suggest a resource</a>
+  <p class="coord-link">Fellowship coordinators — <a id="sheetLink" href="#" target="_blank" rel="noopener noreferrer">open the library spreadsheet</a> to edit or remove an entry.</p>
+</div>
+
+<script>
+(function(){
+  // ================= CONFIGURATION =================
+  // Fill these in once you've set up your Google Sheet + Form.
+  // See SETUP-GUIDE.md for exact steps.
+  const CONFIG = {
+    // The "Publish to web" CSV link for your Google Sheet (Sheet tab that collects Form responses).
+    SHEET_CSV_URL: https://docs.google.com/spreadsheets/d/e/2PACX-1vStV4uktpZvrXL2nFXJ0pgs1kjpIDiV646AKzITCIVGwb29yTVhzZig2zZGZPqDDKgcrKeT4HJ2pGc7/pub?gid=1374459057&single=true&output=csv,
+    // Your Google Form link, so people can add a resource.
+    FORM_URL: https://docs.google.com/forms/d/e/1FAIpQLSf77-OTg0u3Vk1XXZxEeyKXM9qklKpjtTl30F6eE135zNv7HQ/viewform?usp=publish-editor,
+    // Your Google Sheet's normal edit link, for coordinators to fix/remove entries.
+    SHEET_EDIT_URL: https://docs.google.com/spreadsheets/d/1VgXSomONK0xpLiDiFy0cIOwXGZmB8o4qsMcRFasilEI/edit?resourcekey=&gid=1374459057#gid=1374459057
+  };
+  // ===================================================
+
+  const TOPICS = [
+    'Bible & Scripture','Character & Values','Prayer & Worship',
+    'Teaching Methods & Classroom Ideas','Life Skills & Wellbeing',
+    'Seasonal & Special Occasions','Academic Subjects','Family & Parenting',
+    'Youth & Discipleship','Other'
+  ];
+  const AGE_GROUPS = [
+    'Early Years (3–6)','Primary (7–11)','Secondary (12–17)',
+    'Youth / Young Adult','Adults & Teachers','All Ages'
+  ];
+
+  function typeStyle(label){
+    const l = (label || '').toLowerCase();
+    if(l.includes('video') || l.includes('youtube')) return { tag: 'VIDEO', accent: 'clay' };
+    if(l.includes('facebook')) return { tag: 'FB', accent: 'gold' };
+    if(l.includes('instagram')) return { tag: 'IG', accent: 'gold' };
+    if(l.includes('web') || l.includes('article')) return { tag: 'WEB', accent: 'forest' };
+    if(l.includes('worksheet')) return { tag: 'WORKSHEET', accent: 'ink' };
+    if(l.includes('pdf')) return { tag: 'PDF', accent: 'ink' };
+    if(l.includes('file') || l.includes('document')) return { tag: 'FILE', accent: 'ink' };
+    return { tag: 'OTHER', accent: 'ink' };
+  }
+
+  let resources = [];
+  let loaded = false;
+  let loadError = false;
+  let activeTopic = 'all';
+  let activeAge = 'all';
+  let searchTerm = '';
+
+  const $ = (sel) => document.querySelector(sel);
+  const grid = $('#grid');
+  const emptyState = $('#emptyState');
+  const statsEl = $('#stats');
+
+  function escapeHtml(str){
+    return (str || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function normalizeUrl(u){
+    if(!u) return '#';
+    if(/^https?:\/\//i.test(u)) return u;
+    return 'https://' + u;
+  }
+  function splitList(str){
+    return (str || '').split(',').map(s => s.trim()).filter(Boolean);
+  }
+  function findHeader(row, candidates){
+    const keys = Object.keys(row);
+    for(const cand of candidates){
+      const hit = keys.find(k => k.trim().toLowerCase() === cand);
+      if(hit) return hit;
+    }
+    for(const cand of candidates){
+      const hit = keys.find(k => k.trim().toLowerCase().includes(cand));
+      if(hit) return hit;
+    }
+    return null;
+  }
+  function formatDate(raw){
+    if(!raw) return '';
+    const d = new Date(raw);
+    if(isNaN(d.getTime())) return raw;
+    return d.toISOString().slice(0,10);
+  }
+
+  function normalizeRow(row){
+    const get = (candidates) => {
+      const k = findHeader(row, candidates);
+      return k ? (row[k] || '').trim() : '';
+    };
+    return {
+      title: get(['title']),
+      description: get(['description']),
+      type: get(['resource type','type']),
+      url: get(['link','url']),
+      topics: splitList(get(['education topic','topic','topics'])),
+      ageGroups: splitList(get(['age relevancy','age group','age groups','age'])),
+      tags: splitList(get(['keywords','tags'])),
+      addedBy: get(['added by','name']),
+      dateAdded: formatDate(get(['timestamp','date added','date']))
+    };
+  }
+
+  // ---------- Load ----------
+  function loadResources(){
+    if(!CONFIG.SHEET_CSV_URL || CONFIG.SHEET_CSV_URL.startsWith('PASTE_')){
+      showConfigWarning();
+      loaded = true;
+      loadError = true;
+      renderAll();
+      return;
+    }
+    Papa.parse(CONFIG.SHEET_CSV_URL, {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results){
+        resources = (results.data || [])
+          .map(normalizeRow)
+          .filter(r => r.title && r.url);
+        loaded = true;
+        renderAll();
+      },
+      error: function(){
+        loaded = true;
+        loadError = true;
+        renderAll();
+      }
+    });
+  }
+
+  function showConfigWarning(){
+    $('#configWarning').innerHTML = `
+      <div class="config-warning">
+        This site isn't connected to a Google Sheet yet. Open the site's file and paste your published
+        Sheet CSV link into <code>CONFIG.SHEET_CSV_URL</code> near the top of the script. See SETUP-GUIDE.md for exact steps.
+      </div>`;
+  }
+
+  // ---------- Filtering ----------
+  function getFiltered(){
+    return resources.filter(r => {
+      if(activeTopic !== 'all' && !r.topics.includes(activeTopic)) return false;
+      if(activeAge !== 'all' && !r.ageGroups.includes(activeAge)) return false;
+      if(searchTerm){
+        const hay = (r.title + ' ' + r.description + ' ' + r.tags.join(' ')).toLowerCase();
+        if(!hay.includes(searchTerm.toLowerCase())) return false;
+      }
+      return true;
+    }).sort((a,b) => (b.dateAdded || '').localeCompare(a.dateAdded || ''));
+  }
+
+  function renderStats(){
+    if(!loaded){ statsEl.textContent = 'Loading catalogue…'; return; }
+    if(loadError && resources.length === 0){ statsEl.textContent = 'Catalogue not connected yet'; return; }
+    const n = resources.length;
+    statsEl.innerHTML = n === 0 ? 'No resources catalogued yet' : `<strong>${n}</strong> resource${n===1?'':'s'} catalogued`;
+  }
+
+  function renderFilters(){
+    const topicWrap = $('#topicFilters');
+    const chips = ['all', ...TOPICS];
+    topicWrap.innerHTML = chips.map(c =>
+      `<button class="chip${activeTopic===c?' active':''}" data-topic="${escapeHtml(c)}">${c==='all'?'All topics':escapeHtml(c)}</button>`
+    ).join('');
+    topicWrap.querySelectorAll('.chip').forEach(btn => {
+      btn.addEventListener('click', () => { activeTopic = btn.dataset.topic; renderAll(); });
+    });
+
+    const ageWrap = $('#ageFilters');
+    const achips = ['all', ...AGE_GROUPS];
+    ageWrap.innerHTML = achips.map(c =>
+      `<button class="chip${activeAge===c?' active':''}" data-age="${escapeHtml(c)}">${c==='all'?'All ages':escapeHtml(c)}</button>`
+    ).join('');
+    ageWrap.querySelectorAll('.chip').forEach(btn => {
+      btn.addEventListener('click', () => { activeAge = btn.dataset.age; renderAll(); });
+    });
+  }
+
+  function renderGrid(){
+    if(!loaded){
+      grid.innerHTML = '';
+      emptyState.hidden = false;
+      emptyState.textContent = 'Loading the resource library…';
+      return;
+    }
+    if(loadError && resources.length === 0){
+      grid.innerHTML = '';
+      emptyState.hidden = false;
+      emptyState.innerHTML = 'The library isn\'t connected to its spreadsheet yet, or the spreadsheet is empty.';
+      return;
+    }
+    const list = getFiltered();
+    if(list.length === 0){
+      grid.innerHTML = '';
+      emptyState.hidden = false;
+      emptyState.innerHTML = resources.length === 0
+        ? 'No resources yet. Use <strong>Suggest a resource</strong> below to add the first one.'
+        : 'Nothing matches your search or filters. Try clearing a filter.';
+      return;
+    }
+    emptyState.hidden = true;
+
+    grid.innerHTML = list.map(r => {
+      const t = typeStyle(r.type);
+      return `
+      <article class="res-card">
+        <span class="punch left"></span><span class="punch right"></span>
+        <div class="card-top">
+          <span class="type-tab mono ${t.accent}">${t.tag}</span>
+        </div>
+        <h3 class="card-title serif">${escapeHtml(r.title)}</h3>
+        <p class="card-desc">${escapeHtml(r.description)}</p>
+        ${r.topics.length ? `<div class="pill-row">${r.topics.map(a => `<span class="pill pill-topic">${escapeHtml(a)}</span>`).join('')}</div>` : ''}
+        ${r.ageGroups.length ? `<div class="pill-row">${r.ageGroups.map(a => `<span class="pill">${escapeHtml(a)}</span>`).join('')}</div>` : ''}
+        ${r.tags.length ? `<div class="tag-row">${r.tags.map(escapeHtml).join(' · ')}</div>` : ''}
+        <div class="card-foot">
+          <a class="open-link" href="${normalizeUrl(r.url)}" target="_blank" rel="noopener noreferrer">Open resource</a>
+          <span class="date-added mono">${escapeHtml(r.dateAdded || '')}</span>
+        </div>
+      </article>`;
+    }).join('');
+  }
+
+  function renderAll(){
+    renderStats();
+    renderFilters();
+    renderGrid();
+  }
+
+  $('#searchInput').addEventListener('input', (e) => {
+    searchTerm = e.target.value.trim();
+    renderGrid();
+  });
+
+  // ---------- Footer links ----------
+  function setupFooterLinks(){
+    const formLink = $('#suggestLink');
+    const sheetLink = $('#sheetLink');
+    if(CONFIG.FORM_URL && !CONFIG.FORM_URL.startsWith('PASTE_')){
+      formLink.href = CONFIG.FORM_URL;
+    }else{
+      formLink.style.opacity = '0.5';
+      formLink.addEventListener('click', (e) => { e.preventDefault(); alert('The suggestion form link hasn\'t been set up yet.'); });
+    }
+    if(CONFIG.SHEET_EDIT_URL && !CONFIG.SHEET_EDIT_URL.startsWith('PASTE_')){
+      sheetLink.href = CONFIG.SHEET_EDIT_URL;
+    }else{
+      sheetLink.addEventListener('click', (e) => { e.preventDefault(); alert('The spreadsheet link hasn\'t been set up yet.'); });
+    }
+  }
+
+  setupFooterLinks();
+  loadResources();
+})();
+</script>
+</body>
+</html>
