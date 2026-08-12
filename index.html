@@ -205,6 +205,23 @@
   function splitList(str){
     return (str || '').split(',').map(s => s.trim()).filter(Boolean);
   }
+  // Matches against a KNOWN list of labels (TOPICS / AGE_GROUPS) instead of blindly
+  // splitting on commas. This is needed because some labels (e.g. topics) contain
+  // commas of their own, and Google Forms also joins multiple checkbox answers
+  // with commas — a plain split() can't tell those apart, this can.
+  function extractKnownValues(raw, knownList){
+    if(!raw) return [];
+    let remaining = raw;
+    const byLengthDesc = [...knownList].sort((a,b) => b.length - a.length);
+    const found = new Set();
+    byLengthDesc.forEach(label => {
+      if(remaining.includes(label)){
+        found.add(label);
+        remaining = remaining.split(label).join('');
+      }
+    });
+    return knownList.filter(l => found.has(l));
+  }
   function findHeader(row, candidates){
     const keys = Object.keys(row);
     for(const cand of candidates){
@@ -234,8 +251,8 @@
       description: get(['description']),
       type: get(['resource type','type']),
       url: get(['link','url']),
-      topics: splitList(get(['education topic','topic','topics'])),
-      ageGroups: splitList(get(['age relevancy','age group','age groups','age'])),
+      topics: extractKnownValues(get(['education topic','topic','topics']), TOPICS),
+      ageGroups: extractKnownValues(get(['age relevancy','age group','age groups','age']), AGE_GROUPS),
       tags: splitList(get(['keywords','tags'])),
       addedBy: get(['added by','name']),
       dateAdded: formatDate(get(['timestamp','date added','date']))
